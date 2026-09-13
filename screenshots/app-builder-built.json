@@ -1,0 +1,38 @@
+{
+  "url": "http://127.0.0.1:8081/",
+  "viewports": {
+    "desktop": {
+      "width": 1280,
+      "height": 800,
+      "status": 200,
+      "title": "Advanced Level Guidance Management",
+      "hasCanvas": false,
+      "bodyTextLen": 1719,
+      "bodyTextHash": "922aef18827fc491480bb1720d1b72d070a8cc7b395c7c502d51b26b2940fe4f",
+      "bodyTextPrefix": "ALGM ON-DEVICE Command Advisor Honesty Learn Rules Stack Watch N",
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "screenshot": "/workspace/screenshots/app-builder-built.png"
+    },
+    "mobile": {
+      "width": 390,
+      "height": 844,
+      "status": 200,
+      "title": "Advanced Level Guidance Management",
+      "hasCanvas": false,
+      "bodyTextLen": 1679,
+      "bodyTextHash": "3bb02cbdfda58191933b178c6f83c380c9975d3be725dc96d09a8c61227479a8",
+      "bodyTextPrefix": "ALGM NO GATES 3 held COMMAND Know the door before you walk throu",
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "screenshot": "/workspace/screenshots/app-builder-built-mobile.png"
+    }
+  },
+  "brandWarnings": [],
+  "authWarnings": [],
+  "verdictFile": "/workspace/screenshots/app-builder-built.json",
+  "divergesFromBaseline": false,
+  "baselineReasons": []
+}

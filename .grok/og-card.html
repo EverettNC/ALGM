@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <style>
+    html, body {
+      margin: 0;
+      width: 1200px;
+      height: 630px;
+      background: #0b0c0e;
+      overflow: hidden;
+    }
+    .card {
+      position: relative;
+      width: 1200px;
+      height: 630px;
+      background:
+        radial-gradient(ellipse 70% 58% at 50% 44%, #141618 0%, #0b0c0e 68%);
+      color: #eceae4;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-family: "Liberation Serif", "DejaVu Serif", FreeSerif, serif;
+    }
+    .frame {
+      position: absolute;
+      inset: 40px;
+      border: 1px solid rgba(158, 182, 196, 0.18);
+      pointer-events: none;
+    }
+    .mark {
+      margin: 0;
+      font-size: 152px;
+      font-weight: 400;
+      letter-spacing: 0.18em;
+      line-height: 0.88;
+      padding-left: 0.18em;
+      color: #eceae4;
+    }
+    .rule {
+      width: 72px;
+      height: 1px;
+      margin: 28px 0 22px;
+      background: #9eb6c4;
+      opacity: 0.7;
+    }
+    .sub {
+      margin: 0;
+      font-size: 17px;
+      font-weight: 400;
+      letter-spacing: 0.34em;
+      text-transform: uppercase;
+      color: #9eb6c4;
+      padding-left: 0.34em;
+    }
+    .path {
+      margin-top: 54px;
+      width: 520px;
+      height: 80px;
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="frame"></div>
+    <h1 class="mark">ALGM</h1>
+    <div class="rule"></div>
+    <p class="sub">Advanced Level Guidance Management</p>
+    <svg class="path" viewBox="0 0 520 80" aria-hidden="true">
+      <path d="M40 58 L260 40 L480 22" fill="none" stroke="#9eb6c4" stroke-width="1.15"/>
+      <rect x="26" y="44" width="28" height="28" fill="#0b0c0e" stroke="#9eb6c4" stroke-width="1.5"/>
+      <rect x="33" y="51" width="14" height="14" fill="#9eb6c4"/>
+      <path d="M260 24 L276 40 L260 56 L244 40 Z" fill="#0b0c0e" stroke="#9eb6c4" stroke-width="1.5"/>
+      <circle cx="260" cy="40" r="5" fill="#8fad98"/>
+      <rect x="466" y="4" width="28" height="36" fill="#0b0c0e" stroke="#9eb6c4" stroke-width="1.5"/>
+      <rect x="473" y="12" width="14" height="20" fill="#9eb6c4"/>
+    </svg>
+  </div>
+</body>
+</html>
