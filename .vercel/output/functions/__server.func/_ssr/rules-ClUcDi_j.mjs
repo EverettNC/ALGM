@@ -1,7 +1,7 @@
 import { v as Link } from "../_libs/@tanstack/react-router+[...].mjs";
 import { n as require_jsx_runtime } from "../_libs/radix-ui__react-context+react.mjs";
-import { c as RULES_LINE, l as RulesGrid, n as Button, s as PageHeader, t as AppShell } from "./app-shell-DO0gtrE1.mjs";
-//#region node_modules/.nitro/vite/services/ssr/assets/rules-CsT_XH4L.js
+import { c as RULES_LINE, l as RulesGrid, n as Button, s as PageHeader, t as AppShell } from "./app-shell-RnS5hGb-.mjs";
+//#region node_modules/.nitro/vite/services/ssr/assets/rules-ClUcDi_j.js
 var import_jsx_runtime = require_jsx_runtime();
 function RulesPage() {
 	return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(AppShell, { children: [

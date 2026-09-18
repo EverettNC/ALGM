@@ -7,7 +7,7 @@ import { a as Radar, c as Ellipsis, i as Scale, l as Compass, o as LayoutGrid, r
 import { n as clsx, t as cva } from "../_libs/class-variance-authority+clsx.mjs";
 import { t as twMerge } from "../_libs/tailwind-merge.mjs";
 import { n as create, t as persist } from "../_libs/zustand.mjs";
-//#region node_modules/.nitro/vite/services/ssr/assets/app-shell-DO0gtrE1.js
+//#region node_modules/.nitro/vite/services/ssr/assets/app-shell-RnS5hGb-.js
 var import_react = /* @__PURE__ */ __toESM(require_react());
 var import_jsx_runtime = require_jsx_runtime();
 /** Frozen demo clock so SSR and the first client paint share the same stamps. */
@@ -1251,7 +1251,13 @@ function advise(query) {
 			steps: alts.length ? alts.map((a) => `Use ${getModel(a.modelId)?.short} via ${getEnv(a.modelId, a.envId)?.label}.`) : ["Open Stack — the atlas of every door ALGM knows."]
 		};
 	}
-	const env = pickEnv(target.id, kind, q);
+	return verdictFor(target, pickEnv(target.id, kind, q), cap, q);
+}
+/**
+* Build the verdict for one known door. Both entry points land here, so a
+* structured pick and a typed question cannot disagree about the same path.
+*/
+function verdictFor(target, env, cap, q) {
 	const level = capOf(target.id, env.id, cap);
 	const capMeta = CAPABILITIES[cap];
 	const alts = alternatives(cap, {
@@ -1278,10 +1284,34 @@ function advise(query) {
 		steps
 	};
 }
+/**
+* Answer about a door the caller already picked (the Stack page), by id.
+*
+* This used to build a sentence — "swarm with Sonnet 4 in Anthropic API" — and
+* hand it back to `advise`, which re-detected the model from the text. Alias
+* matching scores the environment label too, so "Anthropic API" matched Opus's
+* `anthropic` alias as strongly as "Sonnet 4" matched Sonnet's, and the tie
+* broke on catalog order: asking about Sonnet returned a verdict about Opus.
+* An app about knowing which door you are walking through cannot answer for a
+* different one, so the ids are now used directly.
+*/
 function adviseStructured(modelId, envId, cap) {
 	const model = getModel(modelId);
 	const env = getEnv(modelId, envId);
-	return advise(`${CAPABILITIES[cap].label} with ${model?.short ?? modelId} in ${env?.label ?? envId}`);
+	const q = `${CAPABILITIES[cap].label} with ${model?.short ?? modelId} in ${env?.label ?? envId}`;
+	if (!model || !env) return {
+		id: crypto.randomUUID(),
+		at: Date.now(),
+		query: q,
+		kind: "unknown",
+		headline: "ALGM does not know that door",
+		body: `No environment "${envId}" on model "${modelId}". Open Stack for the doors it does know.`,
+		teach: teachFor(cap),
+		alternatives: [],
+		honestyNote: "Nothing routed.",
+		steps: ["Pick a model and environment from Stack."]
+	};
+	return verdictFor(model, env, cap, q);
 }
 function seedInvestigations(now = Date.now()) {
 	return [

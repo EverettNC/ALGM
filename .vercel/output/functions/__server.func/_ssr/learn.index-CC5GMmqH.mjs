@@ -1,9 +1,9 @@
 import { v as Link } from "../_libs/@tanstack/react-router+[...].mjs";
 import { n as require_jsx_runtime } from "../_libs/radix-ui__react-context+react.mjs";
-import { m as getModel, s as PageHeader, t as AppShell, v as useAlgm } from "./app-shell-DO0gtrE1.mjs";
-import { t as Badge } from "./badge-CZ-GmWbz.mjs";
+import { m as getModel, s as PageHeader, t as AppShell, v as useAlgm } from "./app-shell-RnS5hGb-.mjs";
+import { t as Badge } from "./badge-D0dzi41b.mjs";
 import { t as LESSONS } from "./lessons-DfJKw1T5.mjs";
-//#region node_modules/.nitro/vite/services/ssr/assets/learn.index-BrCJa1QV.js
+//#region node_modules/.nitro/vite/services/ssr/assets/learn.index-CC5GMmqH.js
 var import_jsx_runtime = require_jsx_runtime();
 function Learn() {
 	const progress = useAlgm((s) => s.progress);

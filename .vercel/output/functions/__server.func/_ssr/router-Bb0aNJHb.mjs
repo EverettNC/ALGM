@@ -1,7 +1,7 @@
 import { _ as createRootRoute, g as createFileRoute, h as lazyRouteComponent, l as Scripts, m as Outlet, p as createRouter, u as HeadContent } from "../_libs/@tanstack/react-router+[...].mjs";
 import { n as require_jsx_runtime } from "../_libs/radix-ui__react-context+react.mjs";
 import { n as TriangleAlert } from "../_libs/lucide-react.mjs";
-//#region node_modules/.nitro/vite/services/ssr/assets/router-Bim0Ysaa.js
+//#region node_modules/.nitro/vite/services/ssr/assets/router-Bb0aNJHb.js
 var import_jsx_runtime = require_jsx_runtime();
 var __defProp = Object.defineProperty;
 var __exportAll = (all, no_symbols) => {
@@ -42,7 +42,7 @@ function AppErrorComponent({ error }) {
 		]
 	});
 }
-var styles_default = "/assets/styles-CiUsHdMq.css";
+var styles_default = "/assets/styles-ZOrMuEqd.css";
 var APP_NAME = "Advanced Level Guidance Management";
 var Route$9 = createRootRoute({
 	head: () => ({
@@ -85,26 +85,26 @@ var Route$9 = createRootRoute({
 		children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("head", { children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(HeadContent, {}) }), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("body", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Outlet, {}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Scripts, {})] })]
 	})
 });
-var $$splitComponentImporter$8 = () => import("./routes-BECJBul2.mjs");
+var $$splitComponentImporter$8 = () => import("./routes-CMsAFQN0.mjs");
 var Route$8 = createFileRoute("/")({ component: lazyRouteComponent($$splitComponentImporter$8, "component") });
-var $$splitComponentImporter$7 = () => import("./advisor-CTuarhee.mjs");
+var $$splitComponentImporter$7 = () => import("./advisor-RfFrM0Li.mjs");
 var Route$7 = createFileRoute("/advisor")({
 	validateSearch: (s) => ({ q: typeof s.q === "string" ? s.q : void 0 }),
 	component: lazyRouteComponent($$splitComponentImporter$7, "component")
 });
-var $$splitComponentImporter$6 = () => import("./honesty-DDh-H_Ou.mjs");
+var $$splitComponentImporter$6 = () => import("./honesty-Czyuy5f0.mjs");
 var Route$6 = createFileRoute("/honesty")({ component: lazyRouteComponent($$splitComponentImporter$6, "component") });
 var $$splitComponentImporter$5 = () => import("./learn-DvEeroQW.mjs");
 var Route$5 = createFileRoute("/learn")({ component: lazyRouteComponent($$splitComponentImporter$5, "component") });
-var $$splitComponentImporter$4 = () => import("./rules-CsT_XH4L.mjs");
+var $$splitComponentImporter$4 = () => import("./rules-ClUcDi_j.mjs");
 var Route$4 = createFileRoute("/rules")({ component: lazyRouteComponent($$splitComponentImporter$4, "component") });
-var $$splitComponentImporter$3 = () => import("./stack-BXUh46E1.mjs");
+var $$splitComponentImporter$3 = () => import("./stack-CZX-f0gM.mjs");
 var Route$3 = createFileRoute("/stack")({ component: lazyRouteComponent($$splitComponentImporter$3, "component") });
-var $$splitComponentImporter$2 = () => import("./watch-BEN2gfsD.mjs");
+var $$splitComponentImporter$2 = () => import("./watch-xCBU12FZ.mjs");
 var Route$2 = createFileRoute("/watch")({ component: lazyRouteComponent($$splitComponentImporter$2, "component") });
-var $$splitComponentImporter$1 = () => import("./learn.index-BrCJa1QV.mjs");
+var $$splitComponentImporter$1 = () => import("./learn.index-CC5GMmqH.mjs");
 var Route$1 = createFileRoute("/learn/")({ component: lazyRouteComponent($$splitComponentImporter$1, "component") });
-var $$splitComponentImporter = () => import("./learn._slug-DeE1gC3u.mjs");
+var $$splitComponentImporter = () => import("./learn._slug-BV7ftsTE.mjs");
 var Route = createFileRoute("/learn/$slug")({ component: lazyRouteComponent($$splitComponentImporter, "component") });
 var IndexRoute = Route$8.update({
 	id: "/",
