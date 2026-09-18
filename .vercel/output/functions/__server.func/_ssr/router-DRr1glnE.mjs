@@ -1,7 +1,7 @@
 import { _ as createRootRoute, g as createFileRoute, h as lazyRouteComponent, l as Scripts, m as Outlet, p as createRouter, u as HeadContent } from "../_libs/@tanstack/react-router+[...].mjs";
 import { n as require_jsx_runtime } from "../_libs/radix-ui__react-context+react.mjs";
 import { n as TriangleAlert } from "../_libs/lucide-react.mjs";
-//#region node_modules/.nitro/vite/services/ssr/assets/router-Bb0aNJHb.js
+//#region node_modules/.nitro/vite/services/ssr/assets/router-DRr1glnE.js
 var import_jsx_runtime = require_jsx_runtime();
 var __defProp = Object.defineProperty;
 var __exportAll = (all, no_symbols) => {
@@ -42,7 +42,7 @@ function AppErrorComponent({ error }) {
 		]
 	});
 }
-var styles_default = "/assets/styles-ZOrMuEqd.css";
+var styles_default = "/assets/styles-B9dLzJl2.css";
 var APP_NAME = "Advanced Level Guidance Management";
 var Route$9 = createRootRoute({
 	head: () => ({
@@ -87,7 +87,7 @@ var Route$9 = createRootRoute({
 });
 var $$splitComponentImporter$8 = () => import("./routes-CMsAFQN0.mjs");
 var Route$8 = createFileRoute("/")({ component: lazyRouteComponent($$splitComponentImporter$8, "component") });
-var $$splitComponentImporter$7 = () => import("./advisor-RfFrM0Li.mjs");
+var $$splitComponentImporter$7 = () => import("./advisor-CGpx-BiF.mjs");
 var Route$7 = createFileRoute("/advisor")({
 	validateSearch: (s) => ({ q: typeof s.q === "string" ? s.q : void 0 }),
 	component: lazyRouteComponent($$splitComponentImporter$7, "component")
@@ -104,7 +104,7 @@ var $$splitComponentImporter$2 = () => import("./watch-xCBU12FZ.mjs");
 var Route$2 = createFileRoute("/watch")({ component: lazyRouteComponent($$splitComponentImporter$2, "component") });
 var $$splitComponentImporter$1 = () => import("./learn.index-CC5GMmqH.mjs");
 var Route$1 = createFileRoute("/learn/")({ component: lazyRouteComponent($$splitComponentImporter$1, "component") });
-var $$splitComponentImporter = () => import("./learn._slug-BV7ftsTE.mjs");
+var $$splitComponentImporter = () => import("./learn._slug-DkCaOr7t.mjs");
 var Route = createFileRoute("/learn/$slug")({ component: lazyRouteComponent($$splitComponentImporter, "component") });
 var IndexRoute = Route$8.update({
 	id: "/",
