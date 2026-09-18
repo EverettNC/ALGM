@@ -1,9 +1,11 @@
-import { CAPABILITIES, MODELS, capOf, getEnv, getModel } from "./catalog";
+import { CAPABILITIES, MODELS, capOf, getEnv, getModel } from "./catalog.ts";
 import type {
   Alternative,
   CapLevel,
   CapabilityId,
   EnvKind,
+  Environment,
+  Model,
   Verdict,
   VerdictKind,
 } from "./types";
@@ -46,22 +48,10 @@ export function detectModels(query: string) {
 
 function detectKind(query: string): EnvKind | undefined {
   const q = norm(query);
-  if (hit(q, ["bedrock", "azure", "vertex", "enterprise", "vpc"]))
-    return "enterprise";
+  if (hit(q, ["bedrock", "azure", "vertex", "enterprise", "vpc"])) return "enterprise";
   if (hit(q, ["api", "sdk", "endpoint"])) return "api";
-  if (hit(q, ["ollama", "lm studio", "local", "on device", "on-device"]))
-    return "local";
-  if (
-    hit(q, [
-      "claude.ai",
-      "chatgpt",
-      "grok.com",
-      "website",
-      "web ui",
-      "in the app",
-    ])
-  )
-    return "web";
+  if (hit(q, ["ollama", "lm studio", "local", "on device", "on-device"])) return "local";
+  if (hit(q, ["claude.ai", "chatgpt", "grok.com", "website", "web ui", "in the app"])) return "web";
   return undefined;
 }
 
@@ -75,10 +65,7 @@ function pickEnv(modelId: string, preferred?: EnvKind, query?: string) {
     const match = model.environments.find((e) => e.kind === preferred);
     if (match) return match;
   }
-  return (
-    model.environments.find((e) => e.id === model.defaultEnv) ??
-    model.environments[0]
-  );
+  return model.environments.find((e) => e.id === model.defaultEnv) ?? model.environments[0];
 }
 
 function levelToKind(level: CapLevel): VerdictKind {
@@ -87,10 +74,7 @@ function levelToKind(level: CapLevel): VerdictKind {
   return "blocked";
 }
 
-function alternatives(
-  cap: CapabilityId,
-  skip?: { modelId: string; envId: string },
-): Alternative[] {
+function alternatives(cap: CapabilityId, skip?: { modelId: string; envId: string }): Alternative[] {
   const out: Alternative[] = [];
   for (const model of MODELS) {
     for (const env of model.environments) {
@@ -139,12 +123,7 @@ function teachFor(cap: CapabilityId): string {
   }
 }
 
-function blockedCopy(
-  name: string,
-  envLabel: string,
-  capLabel: string,
-  notes: string,
-) {
+function blockedCopy(name: string, envLabel: string, capLabel: string, notes: string) {
   return `This version of ${name} in ${envLabel} does not allow ${capLabel.toLowerCase()}. ${notes}`;
 }
 
@@ -166,9 +145,7 @@ function privacyVerdict(query: string): Verdict {
               ? "the vendor does not make training/retention clear enough to trust."
               : "check the current terms."
       } Retention: ${data.retention}. ${
-        data.leavesDevice
-          ? "This path leaves the device."
-          : "This path stays on the device."
+        data.leavesDevice ? "This path leaves the device." : "This path stays on the device."
       }`
     : "ALGM can only be honest about a path you name. Type who you are about to talk to, or pick a door in Stack.";
 
@@ -260,14 +237,21 @@ export function advise(query: string): Verdict {
         "Advice covers every environment ALGM knows. There is no hidden list and no enable-gate.",
       steps: alts.length
         ? alts.map(
-            (a) =>
-              `Use ${getModel(a.modelId)?.short} via ${getEnv(a.modelId, a.envId)?.label}.`,
+            (a) => `Use ${getModel(a.modelId)?.short} via ${getEnv(a.modelId, a.envId)?.label}.`,
           )
         : ["Open Stack — the atlas of every door ALGM knows."],
     };
   }
 
   const env = pickEnv(target.id, kind, q)!;
+  return verdictFor(target, env, cap, q);
+}
+
+/**
+ * Build the verdict for one known door. Both entry points land here, so a
+ * structured pick and a typed question cannot disagree about the same path.
+ */
+function verdictFor(target: Model, env: Environment, cap: CapabilityId, q: string): Verdict {
   const level = capOf(target.id, env.id, cap);
   const capMeta = CAPABILITIES[cap];
   const alts = alternatives(cap, { modelId: target.id, envId: env.id });
@@ -326,14 +310,35 @@ export function advise(query: string): Verdict {
   };
 }
 
-export function adviseStructured(
-  modelId: string,
-  envId: string,
-  cap: CapabilityId,
-): Verdict {
+/**
+ * Answer about a door the caller already picked (the Stack page), by id.
+ *
+ * This used to build a sentence — "swarm with Sonnet 4 in Anthropic API" — and
+ * hand it back to `advise`, which re-detected the model from the text. Alias
+ * matching scores the environment label too, so "Anthropic API" matched Opus's
+ * `anthropic` alias as strongly as "Sonnet 4" matched Sonnet's, and the tie
+ * broke on catalog order: asking about Sonnet returned a verdict about Opus.
+ * An app about knowing which door you are walking through cannot answer for a
+ * different one, so the ids are now used directly.
+ */
+export function adviseStructured(modelId: string, envId: string, cap: CapabilityId): Verdict {
   const model = getModel(modelId);
   const env = getEnv(modelId, envId);
   const label = CAPABILITIES[cap].label;
   const q = `${label} with ${model?.short ?? modelId} in ${env?.label ?? envId}`;
-  return advise(q);
+  if (!model || !env) {
+    return {
+      id: crypto.randomUUID(),
+      at: Date.now(),
+      query: q,
+      kind: "unknown",
+      headline: "ALGM does not know that door",
+      body: `No environment "${envId}" on model "${modelId}". Open Stack for the doors it does know.`,
+      teach: teachFor(cap),
+      alternatives: [],
+      honestyNote: "Nothing routed.",
+      steps: ["Pick a model and environment from Stack."],
+    };
+  }
+  return verdictFor(model, env, cap, q);
 }
