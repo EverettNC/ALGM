@@ -3,9 +3,9 @@ import { n as require_react } from "../_libs/@radix-ui/react-compose-refs+[...].
 import { v as Link, y as useNavigate } from "../_libs/@tanstack/react-router+[...].mjs";
 import { n as require_jsx_runtime } from "../_libs/radix-ui__react-context+react.mjs";
 import { a as Radar, d as ArrowUpRight } from "../_libs/lucide-react.mjs";
-import { a as LivePip, d as cn, f as formatBytes, g as timeAgo, h as liveAgents, i as HonestyBar, l as RulesGrid, n as Button, s as PageHeader, t as AppShell, v as useAlgm } from "./app-shell-RnS5hGb-.mjs";
-import { t as Badge } from "./badge-D0dzi41b.mjs";
-//#region node_modules/.nitro/vite/services/ssr/assets/routes-CMsAFQN0.js
+import { a as LivePip, d as atlasDoors, f as cn, g as timeAgo, h as getModel, i as HonestyBar, l as RulesGrid, m as getEnv, n as Button, p as formatBytes, s as PageHeader, t as AppShell, v as useAlgm } from "./app-shell-CVvpu2kp.mjs";
+import { t as Badge } from "./badge-c9OtsAPA.mjs";
+//#region node_modules/.nitro/vite/services/ssr/assets/routes-Dzrb_56c.js
 var import_react = /* @__PURE__ */ __toESM(require_react());
 var import_jsx_runtime = require_jsx_runtime();
 function Input({ className, ...props }) {
@@ -18,9 +18,14 @@ function Command() {
 	const navigate = useNavigate();
 	const investigations = useAlgm((s) => s.investigations);
 	const sessions = useAlgm((s) => s.sessions);
+	const feed = useAlgm((s) => s.feed);
+	const refresh = useAlgm((s) => s.refreshSessions);
 	const verdicts = useAlgm((s) => s.verdicts);
 	const [q, setQ] = (0, import_react.useState)("");
-	const agents = liveAgents();
+	const doors = atlasDoors();
+	(0, import_react.useEffect)(() => {
+		refresh();
+	}, [refresh]);
 	const held = investigations.filter((i) => i.status === "held" || i.status === "inspecting");
 	const drift = sessions.filter((s) => s.drift).length;
 	function go(raw) {
@@ -62,13 +67,13 @@ function Command() {
 			children: [
 				/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Stat, {
 					label: "Doors in the atlas",
-					value: String(agents.length),
-					hint: "Always on. No toggle."
+					value: String(doors.length),
+					hint: "Entries in the book, not live sessions."
 				}),
 				/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Stat, {
 					label: "Honesty drift",
 					value: String(drift),
-					hint: "Claimed origin ≠ observed path",
+					hint: "Atlas claim ≠ path Honesty Local saw",
 					warn: drift > 0
 				}),
 				/* @__PURE__ */ (0, import_jsx_runtime.jsx)(Stat, {
@@ -83,49 +88,63 @@ function Command() {
 			className: "grid gap-6 lg:grid-cols-5",
 			children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("section", {
 				className: "rise-4 rounded-2xl bg-surface p-4 shadow-[0_0_0_1px_var(--color-line)] sm:p-5 lg:col-span-3",
-				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-					className: "mb-4 flex items-center justify-between",
-					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h2", {
-						className: "font-display text-xl",
-						children: "Live origin"
-					}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Link, {
-						to: "/honesty",
-						className: "text-xs text-accent hover:underline",
-						children: "Honesty"
-					})]
-				}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("ul", {
-					className: "grid gap-3 sm:grid-cols-2",
-					children: agents.map(({ model, env }) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("li", {
-						className: "rounded-xl bg-raised p-3",
-						children: [
-							/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-								className: "flex items-start justify-between gap-3",
-								children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("p", {
-									className: "flex items-center gap-2 text-sm font-medium",
-									children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(LivePip, {}), model.short]
-								}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
-									className: "mt-1 font-mono text-xs text-muted",
-									children: env.facility
-								})] }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Badge, {
-									tone: env.data.honesty >= 80 ? "good" : env.data.honesty >= 60 ? "warn" : "bad",
-									children: env.data.honesty
-								})]
-							}),
-							/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("p", {
-								className: "mt-2 text-xs tracking-[0.12em] text-faint uppercase",
+				children: [
+					/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+						className: "mb-4 flex items-center justify-between",
+						children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h2", {
+							className: "font-display text-xl",
+							children: "Live origin"
+						}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Link, {
+							to: "/honesty",
+							className: "text-xs text-accent hover:underline",
+							children: "Honesty"
+						})]
+					}),
+					feed.state === "offline" && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+						className: "text-sm text-warn",
+						children: "Honesty Local is not running on this computer. No live origin is shown until it is."
+					}),
+					feed.state === "ok" && sessions.length === 0 && /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+						className: "text-sm text-muted",
+						children: "Honesty Local is connected and reports no model in use."
+					}),
+					/* @__PURE__ */ (0, import_jsx_runtime.jsx)("ul", {
+						className: "grid gap-3 sm:grid-cols-2",
+						children: sessions.slice(0, 6).map((s) => {
+							const model = getModel(s.modelId);
+							const env = s.envId ? getEnv(s.modelId, s.envId) : void 0;
+							return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("li", {
+								className: "rounded-xl bg-raised p-3",
 								children: [
-									env.label,
-									" · ",
-									env.region
+									/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
+										className: "flex items-start justify-between gap-3",
+										children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("p", {
+											className: "flex items-center gap-2 text-sm font-medium",
+											children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(LivePip, {}), model?.short ?? s.modelId]
+										}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+											className: "mt-1 font-mono text-xs text-muted",
+											children: s.observedPath.at(-1)
+										})] }), s.drift ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Badge, {
+											tone: "bad",
+											children: "Drift"
+										}) : s.scored ? /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Badge, {
+											tone: s.honesty >= 80 ? "good" : s.honesty >= 60 ? "warn" : "bad",
+											children: s.honesty
+										}) : /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Badge, { children: "Unscored" })]
+									}),
+									/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+										className: "mt-2 text-xs tracking-[0.12em] text-faint uppercase",
+										children: env ? `${env.label} · ${env.region}` : "not in the atlas"
+									}),
+									s.scored && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(HonestyBar, {
+										className: "mt-3",
+										value: s.honesty
+									})
 								]
-							}),
-							/* @__PURE__ */ (0, import_jsx_runtime.jsx)(HonestyBar, {
-								className: "mt-3",
-								value: env.data.honesty
-							})
-						]
-					}, model.id))
-				})]
+							}, s.id);
+						})
+					})
+				]
 			}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
 				className: "grid gap-6 lg:col-span-2",
 				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("section", {

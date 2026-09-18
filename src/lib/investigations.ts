@@ -1,75 +1,10 @@
-import type { Investigation, Payload } from "./types";
+import type { Payload } from "./types";
 
-export function seedInvestigations(now = Date.now()): Investigation[] {
-  return [
-    {
-      id: "inv-claude-swarm-flag",
-      title: "Capability flag: swarm=true on claude.ai",
-      source: "Claude Opus 4 · claude.ai",
-      kind: "update",
-      failedAt: now - 1000 * 60 * 37,
-      bytesHeld: 18432,
-      status: "held",
-      stage: "schema.contradiction",
-    },
-    {
-      id: "inv-deepseek-policy",
-      title: "Policy PDF truncated at 24 KB",
-      source: "DeepSeek V3 · hosted",
-      kind: "policy",
-      failedAt: now - 1000 * 60 * 60 * 5,
-      bytesHeld: 24576,
-      status: "held",
-      stage: "fetch.truncated",
-    },
-    {
-      id: "inv-grok-card",
-      title: "Model card upload — signature mismatch",
-      source: "Grok 4.5 · xAI API",
-      kind: "upload",
-      failedAt: now - 1000 * 60 * 12,
-      bytesHeld: 9021,
-      status: "held",
-      stage: "verify.signature",
-    },
-  ];
-}
-
-export const PAYLOADS: Record<string, Payload> = {
-  "inv-claude-swarm-flag": {
-    checksum: "sha256:9c2e…a71b",
-    error:
-      "Environment claude.ai claimed swarm=yes. Catalog and product surface both say single-assistant. Update rejected so a false 'allowed' would not land.",
-    excerpt:
-      '{ "env": "claude.ai", "capabilities": { "swarm": true, "computer_use": false } }',
-    recommendation:
-      "Quarantine. A swarm flag on the website is almost certainly a scraper error or a marketing page bleed. Keep the blocked verdict.",
-    honestyNote:
-      "Applying this would have told you Claude can swarm in the chat box. That is the lie ALGM exists to stop.",
-  },
-  "inv-deepseek-policy": {
-    checksum: "sha256:40aa…12f0",
-    error:
-      "Policy document ended mid-sentence in the retention section. Lazy-load refused to parse a partial legal file.",
-    excerpt:
-      "…customer content may be stored in accordance with applicable law and DeepSeek’s…",
-    recommendation:
-      "Retry when the full PDF is available. Until then, hosted DeepSeek stays at honesty 28 and is not recommended for private work.",
-    honestyNote:
-      "A truncated policy is worse than a harsh one. ALGM will not guess the missing clause.",
-  },
-  "inv-grok-card": {
-    checksum: "sha256:b77d…e4c2",
-    error:
-      "Detached signature did not match the model-card body. File was held, not applied.",
-    excerpt:
-      "x-card-signature: ed25519:…  (mismatch vs body hash)",
-    recommendation:
-      "Retry the upload from the vendor source. If you pasted this yourself, re-copy the file — it may have been truncated in transit.",
-    honestyNote:
-      "Grok’s current API path is unchanged. A bad card does not lower or raise the score.",
-  },
-};
+/**
+ * The Watch pad holds things a person pasted or a feed delivered broken.
+ * It starts empty. There are no seeded cases and no canned payloads: an item
+ * exists on the pad only because something real was ingested on this device.
+ */
 
 export function parseUpload(text: string): {
   ok: boolean;

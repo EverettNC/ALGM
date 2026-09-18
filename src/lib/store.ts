@@ -1,9 +1,8 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { advise } from "./advisor";
-import { DEMO_NOW } from "./clock";
-import { parseUpload, PAYLOADS, seedInvestigations } from "./investigations";
-import { seedSessions } from "./sessions";
+import { fetchHonestySessions, type HonestyFeed } from "./honesty-local";
+import { parseUpload } from "./investigations";
 import type { HonestySession, Investigation, Payload, Verdict } from "./types";
 
 type AlgmState = {
@@ -12,24 +11,28 @@ type AlgmState = {
   lastVerdictId?: string;
   investigations: Investigation[];
   payloads: Record<string, Payload>;
+  /** Observed by Honesty Local on this computer. Never persisted, never seeded. */
   sessions: HonestySession[];
+  feed: HonestyFeed;
   progress: Record<string, "started" | "done">;
   runAdvise: (query: string) => Verdict;
   rememberVerdict: (v: Verdict) => void;
-  inspect: (id: string) => Promise<Payload | undefined>;
+  inspect: (id: string) => Payload | undefined;
   resolveInv: (id: string, status: "cleared" | "quarantined") => void;
   ingestUpload: (text: string) => Investigation;
+  refreshSessions: () => Promise<void>;
   markLesson: (slug: string, status: "started" | "done") => void;
-  resetDemo: () => void;
+  clearDevice: () => void;
 };
 
-function fresh() {
+function empty() {
   return {
     verdicts: [] as Verdict[],
     lastVerdictId: undefined as string | undefined,
-    investigations: seedInvestigations(DEMO_NOW),
+    investigations: [] as Investigation[],
     payloads: {} as Record<string, Payload>,
-    sessions: seedSessions(DEMO_NOW),
+    sessions: [] as HonestySession[],
+    feed: { state: "idle" } as HonestyFeed,
     progress: {} as Record<string, "started" | "done">,
   };
 }
@@ -38,7 +41,7 @@ export const useAlgm = create<AlgmState>()(
   persist(
     (set, get) => ({
       hydrated: false,
-      ...fresh(),
+      ...empty(),
       runAdvise: (query) => {
         const v = advise(query);
         set((s) => ({
@@ -52,29 +55,16 @@ export const useAlgm = create<AlgmState>()(
           verdicts: [v, ...s.verdicts.filter((x) => x.id !== v.id)].slice(0, 24),
           lastVerdictId: v.id,
         })),
-      inspect: async (id) => {
+      // The payload was stored when the item was ingested. Inspecting reveals
+      // it; it does not fetch, wait, or invent one.
+      inspect: (id) => {
+        const payload = get().payloads[id];
         set((s) => ({
           investigations: s.investigations.map((i) =>
-            i.id === id ? { ...i, status: "inspecting" } : i,
+            i.id === id ? { ...i, status: payload ? "inspected" : "held" } : i,
           ),
         }));
-        await new Promise((r) => setTimeout(r, 700));
-        const existing = get().payloads[id] ?? PAYLOADS[id];
-        if (!existing) {
-          set((s) => ({
-            investigations: s.investigations.map((i) =>
-              i.id === id ? { ...i, status: "held" } : i,
-            ),
-          }));
-          return undefined;
-        }
-        set((s) => ({
-          payloads: { ...s.payloads, [id]: existing },
-          investigations: s.investigations.map((i) =>
-            i.id === id ? { ...i, status: "inspected" } : i,
-          ),
-        }));
-        return existing;
+        return payload;
       },
       resolveInv: (id, status) =>
         set((s) => ({
@@ -102,19 +92,22 @@ export const useAlgm = create<AlgmState>()(
         }));
         return inv;
       },
+      refreshSessions: async () => {
+        const { feed, sessions } = await fetchHonestySessions();
+        set({ feed, sessions });
+      },
       markLesson: (slug, status) =>
         set((s) => ({ progress: { ...s.progress, [slug]: status } })),
-      resetDemo: () => set({ ...fresh(), hydrated: true }),
+      clearDevice: () => set({ ...empty(), hydrated: true }),
     }),
     {
-      name: "algm-v2",
+      name: "algm-v3",
       skipHydration: true,
       partialize: (s) => ({
         verdicts: s.verdicts,
         lastVerdictId: s.lastVerdictId,
         investigations: s.investigations,
         payloads: s.payloads,
-        sessions: s.sessions,
         progress: s.progress,
       }),
       onRehydrateStorage: () => (state) => {

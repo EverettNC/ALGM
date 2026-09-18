@@ -1,8 +1,8 @@
 import { v as Link } from "../_libs/@tanstack/react-router+[...].mjs";
 import { n as require_jsx_runtime } from "../_libs/radix-ui__react-context+react.mjs";
-import { _ as trainingLabel, i as HonestyBar, o as MODELS, r as CAPABILITIES, s as PageHeader, t as AppShell } from "./app-shell-RnS5hGb-.mjs";
-import { t as Badge } from "./badge-D0dzi41b.mjs";
-//#region node_modules/.nitro/vite/services/ssr/assets/stack-CZX-f0gM.js
+import { _ as trainingLabel, i as HonestyBar, o as MODELS, r as CAPABILITIES, s as PageHeader, t as AppShell } from "./app-shell-CVvpu2kp.mjs";
+import { t as Badge } from "./badge-c9OtsAPA.mjs";
+//#region node_modules/.nitro/vite/services/ssr/assets/stack-CcRxPuDO.js
 var import_jsx_runtime = require_jsx_runtime();
 var CAP_ORDER = Object.keys(CAPABILITIES);
 function StackPage() {

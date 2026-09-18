@@ -1,13 +1,14 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { ArrowUpRight, Radar } from "lucide-react";
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { AppShell, PageHeader } from "@/components/app-shell";
 import { HonestyBar, LivePip } from "@/components/marks";
 import { RulesGrid } from "@/components/rules-covenant";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { liveAgents } from "@/lib/sessions";
+import { atlasDoors } from "@/lib/honesty-local";
+import { getEnv, getModel } from "@/lib/catalog";
 import { useAlgm } from "@/lib/store";
 import { formatBytes, timeAgo } from "@/lib/utils";
 
@@ -17,9 +18,14 @@ function Command() {
   const navigate = useNavigate();
   const investigations = useAlgm((s) => s.investigations);
   const sessions = useAlgm((s) => s.sessions);
+  const feed = useAlgm((s) => s.feed);
+  const refresh = useAlgm((s) => s.refreshSessions);
   const verdicts = useAlgm((s) => s.verdicts);
   const [q, setQ] = useState("");
-  const agents = liveAgents();
+  const doors = atlasDoors();
+  useEffect(() => {
+    void refresh();
+  }, [refresh]);
   const held = investigations.filter((i) => i.status === "held" || i.status === "inspecting");
   const drift = sessions.filter((s) => s.drift).length;
 
@@ -57,11 +63,11 @@ function Command() {
       </form>
 
       <section className="rise-3 mb-8 grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <Stat label="Doors in the atlas" value={String(agents.length)} hint="Always on. No toggle." />
+        <Stat label="Doors in the atlas" value={String(doors.length)} hint="Entries in the book, not live sessions." />
         <Stat
           label="Honesty drift"
           value={String(drift)}
-          hint="Claimed origin ≠ observed path"
+          hint="Atlas claim ≠ path Honesty Local saw"
           warn={drift > 0}
         />
         <Stat
@@ -80,29 +86,43 @@ function Command() {
               Honesty
             </Link>
           </div>
+          {feed.state === "offline" && (
+            <p className="text-sm text-warn">
+              Honesty Local is not running on this computer. No live origin is shown until it is.
+            </p>
+          )}
+          {feed.state === "ok" && sessions.length === 0 && (
+            <p className="text-sm text-muted">Honesty Local is connected and reports no model in use.</p>
+          )}
           <ul className="grid gap-3 sm:grid-cols-2">
-            {agents.map(({ model, env }) => (
-              <li key={model.id} className="rounded-xl bg-raised p-3">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <p className="flex items-center gap-2 text-sm font-medium">
-                      <LivePip />
-                      {model.short}
-                    </p>
-                    <p className="mt-1 font-mono text-xs text-muted">{env.facility}</p>
+            {sessions.slice(0, 6).map((s) => {
+              const model = getModel(s.modelId);
+              const env = s.envId ? getEnv(s.modelId, s.envId) : undefined;
+              return (
+                <li key={s.id} className="rounded-xl bg-raised p-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="flex items-center gap-2 text-sm font-medium">
+                        <LivePip />
+                        {model?.short ?? s.modelId}
+                      </p>
+                      <p className="mt-1 font-mono text-xs text-muted">{s.observedPath.at(-1)}</p>
+                    </div>
+                    {s.drift ? (
+                      <Badge tone="bad">Drift</Badge>
+                    ) : s.scored ? (
+                      <Badge tone={s.honesty >= 80 ? "good" : s.honesty >= 60 ? "warn" : "bad"}>{s.honesty}</Badge>
+                    ) : (
+                      <Badge>Unscored</Badge>
+                    )}
                   </div>
-                  <Badge
-                    tone={env.data.honesty >= 80 ? "good" : env.data.honesty >= 60 ? "warn" : "bad"}
-                  >
-                    {env.data.honesty}
-                  </Badge>
-                </div>
-                <p className="mt-2 text-xs tracking-[0.12em] text-faint uppercase">
-                  {env.label} · {env.region}
-                </p>
-                <HonestyBar className="mt-3" value={env.data.honesty} />
-              </li>
-            ))}
+                  <p className="mt-2 text-xs tracking-[0.12em] text-faint uppercase">
+                    {env ? `${env.label} · ${env.region}` : "not in the atlas"}
+                  </p>
+                  {s.scored && <HonestyBar className="mt-3" value={s.honesty} />}
+                </li>
+              );
+            })}
           </ul>
         </section>
 
