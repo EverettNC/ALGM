@@ -3,3 +3,7 @@ node_modules/
 .github_repo
 .env
 .env.*
+
+# Local preview server state (scripts/preview.mjs)
+.preview.pid
+.preview.log
