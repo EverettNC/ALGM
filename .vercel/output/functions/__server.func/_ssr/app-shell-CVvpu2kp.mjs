@@ -7,15 +7,13 @@ import { a as Radar, c as Ellipsis, i as Scale, l as Compass, o as LayoutGrid, r
 import { n as clsx, t as cva } from "../_libs/class-variance-authority+clsx.mjs";
 import { t as twMerge } from "../_libs/tailwind-merge.mjs";
 import { n as create, t as persist } from "../_libs/zustand.mjs";
-//#region node_modules/.nitro/vite/services/ssr/assets/app-shell-RnS5hGb-.js
+//#region node_modules/.nitro/vite/services/ssr/assets/app-shell-CVvpu2kp.js
 var import_react = /* @__PURE__ */ __toESM(require_react());
 var import_jsx_runtime = require_jsx_runtime();
-/** Frozen demo clock so SSR and the first client paint share the same stamps. */
-var DEMO_NOW = Date.UTC(2026, 8, 13, 11, 0, 0);
 function cn(...inputs) {
 	return twMerge(clsx(inputs));
 }
-function timeAgo(ts, now = DEMO_NOW) {
+function timeAgo(ts, now = Date.now()) {
 	const s = Math.max(0, Math.round((now - ts) / 1e3));
 	if (s < 45) return "just now";
 	const m = Math.round(s / 60);
@@ -1044,7 +1042,7 @@ var MODELS = [
 		}]
 	}
 ];
-var ALL_MODEL_IDS = MODELS.map((m) => m.id);
+MODELS.map((m) => m.id);
 function getModel(id) {
 	return MODELS.find((m) => m.id === id);
 }
@@ -1313,63 +1311,166 @@ function adviseStructured(modelId, envId, cap) {
 	};
 	return verdictFor(model, env, cap, q);
 }
-function seedInvestigations(now = Date.now()) {
-	return [
-		{
-			id: "inv-claude-swarm-flag",
-			title: "Capability flag: swarm=true on claude.ai",
-			source: "Claude Opus 4 · claude.ai",
-			kind: "update",
-			failedAt: now - 222e4,
-			bytesHeld: 18432,
-			status: "held",
-			stage: "schema.contradiction"
-		},
-		{
-			id: "inv-deepseek-policy",
-			title: "Policy PDF truncated at 24 KB",
-			source: "DeepSeek V3 · hosted",
-			kind: "policy",
-			failedAt: now - 18e6,
-			bytesHeld: 24576,
-			status: "held",
-			stage: "fetch.truncated"
-		},
-		{
-			id: "inv-grok-card",
-			title: "Model card upload — signature mismatch",
-			source: "Grok 4.5 · xAI API",
-			kind: "upload",
-			failedAt: now - 72e4,
-			bytesHeld: 9021,
-			status: "held",
-			stage: "verify.signature"
-		}
-	];
-}
-var PAYLOADS = {
-	"inv-claude-swarm-flag": {
-		checksum: "sha256:9c2e…a71b",
-		error: "Environment claude.ai claimed swarm=yes. Catalog and product surface both say single-assistant. Update rejected so a false 'allowed' would not land.",
-		excerpt: "{ \"env\": \"claude.ai\", \"capabilities\": { \"swarm\": true, \"computer_use\": false } }",
-		recommendation: "Quarantine. A swarm flag on the website is almost certainly a scraper error or a marketing page bleed. Keep the blocked verdict.",
-		honestyNote: "Applying this would have told you Claude can swarm in the chat box. That is the lie ALGM exists to stop."
-	},
-	"inv-deepseek-policy": {
-		checksum: "sha256:40aa…12f0",
-		error: "Policy document ended mid-sentence in the retention section. Lazy-load refused to parse a partial legal file.",
-		excerpt: "…customer content may be stored in accordance with applicable law and DeepSeek’s…",
-		recommendation: "Retry when the full PDF is available. Until then, hosted DeepSeek stays at honesty 28 and is not recommended for private work.",
-		honestyNote: "A truncated policy is worse than a harsh one. ALGM will not guess the missing clause."
-	},
-	"inv-grok-card": {
-		checksum: "sha256:b77d…e4c2",
-		error: "Detached signature did not match the model-card body. File was held, not applied.",
-		excerpt: "x-card-signature: ed25519:…  (mismatch vs body hash)",
-		recommendation: "Retry the upload from the vendor source. If you pasted this yourself, re-copy the file — it may have been truncated in transit.",
-		honestyNote: "Grok’s current API path is unchanged. A bad card does not lower or raise the score."
+/**
+* Honesty Local is the watcher on this computer (HONESTY, honesty.py). It
+* observes which programs are running and which model is actually answering:
+* live sockets to the datacenters, Ollama and NIM on loopback, the model each
+* app has selected, the model the last session used.
+*
+* ALGM does not observe anything itself. Every session on the Honesty page is
+* a row Honesty Local reported. When Honesty Local is not running, there are
+* no sessions, and the page says so. Nothing here is seeded, sampled, or
+* invented.
+*/
+var HONESTY_LOCAL_URL = "http://127.0.0.1:8787";
+var BROWSERS = [
+	"chrome",
+	"safari",
+	"firefox",
+	"brave",
+	"edge",
+	"chromium"
+];
+/** Map a Honesty Local provider + model id onto an atlas model, or nothing. */
+function atlasModelFor(row) {
+	const provider = (row.provider || "").toLowerCase();
+	const id = `${row.id} ${row.name}`.toLowerCase();
+	if (provider === "anthropic") {
+		if (id.includes("opus")) return "claude-opus-4";
+		if (id.includes("sonnet")) return "claude-sonnet-4";
+		return;
 	}
-};
+	if (provider === "openai") return id.match(/\bgpt-5/) ? "gpt-5" : void 0;
+	if (provider === "xai") return id.includes("grok") ? "grok-4.5" : void 0;
+	if (provider === "gemini" || provider === "google") return id.includes("gemini") ? "gemini-2.5" : void 0;
+	if (provider === "mistral") return id.includes("mistral") ? "mistral-large" : void 0;
+	if (provider === "deepseek") return id.includes("deepseek") ? "deepseek-v3" : void 0;
+	if (provider === "ollama" || provider === "lm studio" || provider === "nvidia nim") {
+		if (id.includes("llama")) return "llama-70b-local";
+		if (id.includes("qwen")) return "qwen-local";
+		if (id.includes("deepseek")) return "deepseek-v3";
+		return;
+	}
+}
+/** Which kind of door the observation points at, from what Honesty Local saw. */
+function observedKind(row) {
+	const host = (row.host || "").toLowerCase();
+	const via = (row.via || "").toLowerCase();
+	if (row.where === "local") return "local";
+	if (host.includes("bedrock") || host.includes("azure") || host.includes("vertex")) return "enterprise";
+	if (BROWSERS.some((b) => via.includes(b))) return "web";
+	return "api";
+}
+function pickEnvByKind(modelId, kind) {
+	const model = getModel(modelId);
+	if (!model) return void 0;
+	return model.environments.find((e) => e.kind === kind);
+}
+function observedPath(row) {
+	const hops = ["This device"];
+	if (row.via) hops.push(`via ${row.via}`);
+	if (row.host) hops.push(row.host);
+	hops.push(`${row.provider} · ${row.where === "local" ? "on this computer" : "at the datacenter"}`);
+	return hops;
+}
+function stamp(at, fallback = Date.now()) {
+	if (!at) return fallback;
+	const t = Date.parse(at);
+	return Number.isFinite(t) ? t : fallback;
+}
+/**
+* One observed row becomes one session. The claim comes from the atlas, the
+* path comes from Honesty Local, and drift is the disagreement between them.
+* A row the atlas does not know is still shown, unscored, with no drift call,
+* because ALGM has no claim to compare it against.
+*/
+function sessionFromRow(row, now = Date.now()) {
+	const modelId = atlasModelFor(row);
+	const kind = observedKind(row);
+	const at = stamp(row.at, now);
+	const path = observedPath(row);
+	if (!modelId) return {
+		id: `hl-${row.provider}-${row.id}`.toLowerCase().replace(/[^a-z0-9-]+/g, "-"),
+		modelId: row.id,
+		envId: "",
+		claimedOrigin: "Not in the atlas",
+		observedPath: path,
+		honesty: 0,
+		scored: false,
+		note: `Honesty Local observed ${row.name} (${row.provider}, ${row.status.replace("_", " ")}, source ${row.source}). The atlas has no entry for it, so there is no claim to compare and no score.`,
+		at,
+		drift: false
+	};
+	const env = pickEnvByKind(modelId, kind) ?? getEnv(modelId, getModel(modelId).defaultEnv);
+	const model = getModel(modelId);
+	const exact = env?.kind === kind;
+	const claimedLocal = env?.kind === "local";
+	const observedLocal = row.where === "local";
+	const drift = !exact || claimedLocal !== observedLocal;
+	const note = drift ? `Atlas door for ${model.short} nearest to this observation is ${env?.label ?? "unknown"} (${env?.kind ?? "?"}); Honesty Local saw ${kind === "local" ? "a local runtime" : kind === "web" ? "a browser session" : kind === "enterprise" ? "an enterprise endpoint" : "an API path"}${row.host ? ` to ${row.host}` : ""}. The claim and the path do not agree.` : `Observed path matches the atlas door ${env?.label}. ${env?.data.honestyWhy ?? ""}`.trim();
+	return {
+		id: `hl-${row.provider}-${row.id}`.toLowerCase().replace(/[^a-z0-9-]+/g, "-"),
+		modelId,
+		envId: env?.id ?? "",
+		claimedOrigin: env?.facility ?? model.origin,
+		observedPath: path,
+		honesty: env?.data.honesty ?? 0,
+		scored: Boolean(env),
+		note,
+		at,
+		drift
+	};
+}
+function sessionsFromRows(rows, now = Date.now()) {
+	if (!Array.isArray(rows)) return [];
+	return rows.filter((r) => Boolean(r) && typeof r === "object" && typeof r.id === "string").filter((r) => r.status === "in_use" || r.status === "configured").map((r) => sessionFromRow(r, now)).sort((a, b) => b.at - a.at);
+}
+/** Ask Honesty Local. Never throws; an unreachable watcher is a reported state, not a crash. */
+async function fetchHonestySessions(base = HONESTY_LOCAL_URL) {
+	const checkedAt = Date.now();
+	try {
+		const res = await fetch(`${base}/api/models`, { cache: "no-store" });
+		if (!res.ok) return {
+			feed: {
+				state: "offline",
+				checkedAt,
+				error: `Honesty Local answered ${res.status}`
+			},
+			sessions: []
+		};
+		const data = await res.json();
+		return {
+			feed: {
+				state: "ok",
+				checkedAt,
+				lastScan: data.last_scan ?? null,
+				machine: data.machine ?? null
+			},
+			sessions: sessionsFromRows(data.models, checkedAt)
+		};
+	} catch (err) {
+		return {
+			feed: {
+				state: "offline",
+				checkedAt,
+				error: err instanceof Error ? err.message : String(err)
+			},
+			sessions: []
+		};
+	}
+}
+/** Every door the atlas knows. These are entries in a book, not live sessions. */
+function atlasDoors() {
+	return MODELS.flatMap((model) => model.environments.map((env) => ({
+		model,
+		env
+	})));
+}
+/**
+* The Watch pad holds things a person pasted or a feed delivered broken.
+* It starts empty. There are no seeded cases and no canned payloads: an item
+* exists on the pad only because something real was ingested on this device.
+*/
 function parseUpload(text) {
 	const raw = text.trim();
 	if (raw.length < 12) return {
@@ -1416,155 +1517,20 @@ function parseUpload(text) {
 		}
 	};
 }
-var TEMPLATES = [
-	{
-		modelId: "claude-opus-4",
-		envId: "claude-web",
-		claimedOrigin: "Anthropic · United States",
-		observedPath: [
-			"This device",
-			"Edge US-East",
-			"AWS us-east-1",
-			"Anthropic control plane"
-		],
-		honesty: 74,
-		note: "Path matches the consumer website. Training opt-out is on you.",
-		drift: false
-	},
-	{
-		modelId: "grok-4.5",
-		envId: "grok-api",
-		claimedOrigin: "Colossus · Memphis",
-		observedPath: [
-			"This device",
-			"xAI API edge",
-			"Colossus Memphis"
-		],
-		honesty: 84,
-		note: "API path is the one you configured. No unexpected hop.",
-		drift: false
-	},
-	{
-		modelId: "gpt-5",
-		envId: "chatgpt",
-		claimedOrigin: "OpenAI · US",
-		observedPath: [
-			"This device",
-			"ChatGPT edge",
-			"Azure mixed region",
-			"OpenAI"
-		],
-		honesty: 62,
-		note: "Observed Azure hop is allowed by the product, not disclosed in the tab UI.",
-		drift: true
-	},
-	{
-		modelId: "llama-70b-local",
-		envId: "ollama",
-		claimedOrigin: "This device",
-		observedPath: ["This device"],
-		honesty: 97,
-		note: "No outbound inference. Tools are idle.",
-		drift: false
-	},
-	{
-		modelId: "deepseek-v3",
-		envId: "deepseek-chat",
-		claimedOrigin: "DeepSeek (unspecified region on the site)",
-		observedPath: [
-			"This device",
-			"Public edge",
-			"Hosted PRC infrastructure"
-		],
-		honesty: 28,
-		note: "Claimed origin was vague. Observed path is hosted PRC. Drift flagged.",
-		drift: true
-	},
-	{
-		modelId: "gemini-2.5",
-		envId: "gemini-app",
-		claimedOrigin: "Google",
-		observedPath: [
-			"This device",
-			"Google front door",
-			"Multi-region"
-		],
-		honesty: 58,
-		note: "Region is Google’s choice, not yours. Vertex would pin it.",
-		drift: true
-	},
-	{
-		modelId: "mistral-large",
-		envId: "mistral-api",
-		claimedOrigin: "Mistral · EU",
-		observedPath: [
-			"This device",
-			"Mistral EU edge",
-			"La Plateforme"
-		],
-		honesty: 87,
-		note: "Default residency is EU. No unexpected hop off-continent.",
-		drift: false
-	},
-	{
-		modelId: "qwen-local",
-		envId: "qwen-local",
-		claimedOrigin: "This device",
-		observedPath: ["This device"],
-		honesty: 96,
-		note: "Local weights. Hosted Qwen Chat is a different product.",
-		drift: false
-	},
-	{
-		modelId: "claude-sonnet-4",
-		envId: "sonnet-api",
-		claimedOrigin: "Anthropic API · United States",
-		observedPath: [
-			"This device",
-			"Anthropic API edge",
-			"AWS us-east-1"
-		],
-		honesty: 86,
-		note: "API path. Zero-training default holds.",
-		drift: false
-	}
-];
-function seedSessions(now = Date.now()) {
-	return TEMPLATES.map((t, i) => {
-		const model = getModel(t.modelId);
-		const env = getEnv(t.modelId, t.envId);
-		return {
-			...t,
-			claimedOrigin: t.claimedOrigin || model?.origin || "Unknown",
-			id: `sess-${t.modelId}-${i}`,
-			at: now - (i * 7 + 3) * 60 * 1e3,
-			honesty: env?.data.honesty ?? t.honesty
-		};
-	});
-}
-function liveAgents() {
-	return ALL_MODEL_IDS.map((id) => {
-		const model = getModel(id);
-		if (!model) return null;
-		return {
-			model,
-			env: model.environments.find((e) => e.id === model.defaultEnv) ?? model.environments[0]
-		};
-	}).filter((x) => Boolean(x));
-}
-function fresh() {
+function empty() {
 	return {
 		verdicts: [],
 		lastVerdictId: void 0,
-		investigations: seedInvestigations(DEMO_NOW),
+		investigations: [],
 		payloads: {},
-		sessions: seedSessions(DEMO_NOW),
+		sessions: [],
+		feed: { state: "idle" },
 		progress: {}
 	};
 }
 var useAlgm = create()(persist((set, get) => ({
 	hydrated: false,
-	...fresh(),
+	...empty(),
 	runAdvise: (query) => {
 		const v = advise(query);
 		set((s) => ({
@@ -1577,31 +1543,13 @@ var useAlgm = create()(persist((set, get) => ({
 		verdicts: [v, ...s.verdicts.filter((x) => x.id !== v.id)].slice(0, 24),
 		lastVerdictId: v.id
 	})),
-	inspect: async (id) => {
+	inspect: (id) => {
+		const payload = get().payloads[id];
 		set((s) => ({ investigations: s.investigations.map((i) => i.id === id ? {
 			...i,
-			status: "inspecting"
+			status: payload ? "inspected" : "held"
 		} : i) }));
-		await new Promise((r) => setTimeout(r, 700));
-		const existing = get().payloads[id] ?? PAYLOADS[id];
-		if (!existing) {
-			set((s) => ({ investigations: s.investigations.map((i) => i.id === id ? {
-				...i,
-				status: "held"
-			} : i) }));
-			return;
-		}
-		set((s) => ({
-			payloads: {
-				...s.payloads,
-				[id]: existing
-			},
-			investigations: s.investigations.map((i) => i.id === id ? {
-				...i,
-				status: "inspected"
-			} : i)
-		}));
-		return existing;
+		return payload;
 	},
 	resolveInv: (id, status) => set((s) => ({ investigations: s.investigations.map((i) => i.id === id ? {
 		...i,
@@ -1628,23 +1576,29 @@ var useAlgm = create()(persist((set, get) => ({
 		}));
 		return inv;
 	},
+	refreshSessions: async () => {
+		const { feed, sessions } = await fetchHonestySessions();
+		set({
+			feed,
+			sessions
+		});
+	},
 	markLesson: (slug, status) => set((s) => ({ progress: {
 		...s.progress,
 		[slug]: status
 	} })),
-	resetDemo: () => set({
-		...fresh(),
+	clearDevice: () => set({
+		...empty(),
 		hydrated: true
 	})
 }), {
-	name: "algm-v2",
+	name: "algm-v3",
 	skipHydration: true,
 	partialize: (s) => ({
 		verdicts: s.verdicts,
 		lastVerdictId: s.lastVerdictId,
 		investigations: s.investigations,
 		payloads: s.payloads,
-		sessions: s.sessions,
 		progress: s.progress
 	}),
 	onRehydrateStorage: () => (state) => {
@@ -1815,8 +1769,8 @@ function AppShell({ children }) {
 							}, item.to)), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(Button, {
 								variant: "outline",
 								className: "mt-2",
-								onClick: () => useAlgm.getState().resetDemo(),
-								children: "Reset on-device state"
+								onClick: () => useAlgm.getState().clearDevice(),
+								children: "Clear on-device state"
 							})]
 						})]
 					})]
@@ -1848,4 +1802,4 @@ function PageHeader({ kicker, title, lede, action }) {
 	});
 }
 //#endregion
-export { trainingLabel as _, LivePip as a, RULES_LINE as c, cn as d, formatBytes as f, timeAgo as g, liveAgents as h, HonestyBar as i, RulesGrid as l, getModel as m, Button as n, MODELS as o, getEnv as p, CAPABILITIES as r, PageHeader as s, AppShell as t, adviseStructured as u, useAlgm as v };
+export { trainingLabel as _, LivePip as a, RULES_LINE as c, atlasDoors as d, cn as f, timeAgo as g, getModel as h, HonestyBar as i, RulesGrid as l, getEnv as m, Button as n, MODELS as o, formatBytes as p, CAPABILITIES as r, PageHeader as s, AppShell as t, adviseStructured as u, useAlgm as v };

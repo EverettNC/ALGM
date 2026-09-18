@@ -161,9 +161,9 @@ export function AppShell({ children }: { children: ReactNode }) {
               <Button
                 variant="outline"
                 className="mt-2"
-                onClick={() => useAlgm.getState().resetDemo()}
+                onClick={() => useAlgm.getState().clearDevice()}
               >
-                Reset on-device state
+                Clear on-device state
               </Button>
             </div>
           </SheetContent>

@@ -3,11 +3,11 @@ import { n as require_react } from "../_libs/@radix-ui/react-compose-refs+[...].
 import { v as Link } from "../_libs/@tanstack/react-router+[...].mjs";
 import { n as require_jsx_runtime } from "../_libs/radix-ui__react-context+react.mjs";
 import { n as TSS_SERVER_FUNCTION, r as getServerFnById, t as createServerFn } from "./ssr.mjs";
-import { r as Route$7 } from "./router-DRr1glnE.mjs";
-import { d as cn, i as HonestyBar, m as getModel, n as Button, o as MODELS, p as getEnv, r as CAPABILITIES, s as PageHeader, t as AppShell, u as adviseStructured, v as useAlgm } from "./app-shell-RnS5hGb-.mjs";
-import { t as Badge } from "./badge-D0dzi41b.mjs";
-import { t as Textarea } from "./textarea-CRwbEOSg.mjs";
-//#region node_modules/.nitro/vite/services/ssr/assets/advisor-CGpx-BiF.js
+import { r as Route$7 } from "./router-nQ8ATc2_.mjs";
+import { f as cn, h as getModel, i as HonestyBar, m as getEnv, n as Button, o as MODELS, r as CAPABILITIES, s as PageHeader, t as AppShell, u as adviseStructured, v as useAlgm } from "./app-shell-CVvpu2kp.mjs";
+import { t as Badge } from "./badge-c9OtsAPA.mjs";
+import { t as Textarea } from "./textarea-BedWHm_X.mjs";
+//#region node_modules/.nitro/vite/services/ssr/assets/advisor-CYeHN7tO.js
 var import_react = /* @__PURE__ */ __toESM(require_react());
 var import_jsx_runtime = require_jsx_runtime();
 var createSsrRpc = (functionId) => {

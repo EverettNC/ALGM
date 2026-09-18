@@ -117,6 +117,8 @@ export type HonestySession = {
   claimedOrigin: string;
   observedPath: string[];
   honesty: number;
+  /** false when the atlas has no door for what was observed; then honesty carries no meaning */
+  scored: boolean;
   note: string;
   at: number;
   drift: boolean;

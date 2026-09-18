@@ -1,55 +1,67 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useEffect } from "react";
 import { AppShell, PageHeader } from "@/components/app-shell";
 import { HonestyBar, LivePip } from "@/components/marks";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { getEnv, getModel, trainingLabel } from "@/lib/catalog";
-import { liveAgents } from "@/lib/sessions";
+import { HONESTY_LOCAL_URL } from "@/lib/honesty-local";
 import { useAlgm } from "@/lib/store";
 import { timeAgo } from "@/lib/utils";
 
 export const Route = createFileRoute("/honesty")({ component: Honesty });
 
+const REFRESH_MS = 15_000;
+
 function Honesty() {
   const sessions = useAlgm((s) => s.sessions);
-  const agents = liveAgents();
+  const feed = useAlgm((s) => s.feed);
+  const refresh = useAlgm((s) => s.refreshSessions);
   const drift = sessions.filter((s) => s.drift);
+
+  useEffect(() => {
+    void refresh();
+    const t = setInterval(() => void refresh(), REFRESH_MS);
+    return () => clearInterval(t);
+  }, [refresh]);
 
   return (
     <AppShell>
       <PageHeader
         kicker="Honesty"
         title="Where the agent is — and where the words go."
-        lede="ALGM does not protect the data. It tells you the path: claimed origin, observed hops, training posture, and whether that matches the tab you opened. The ledger stays on. There is no pause."
+        lede="Every session here was observed by Honesty Local, the watcher on this computer. The claim comes from the atlas; the path comes from the wire. ALGM invents nothing: when the watcher is not running, this page is empty and says so."
+        action={
+          <Button variant="secondary" onClick={() => void refresh()}>
+            Refresh
+          </Button>
+        }
       />
 
-      <section className="rise-2 mb-8 overflow-x-auto rounded-2xl bg-surface p-4 shadow-[0_0_0_1px_var(--color-line)] sm:p-5">
-        <p className="text-[0.6875rem] tracking-[0.14em] text-muted uppercase">
-          Origin lattice
-        </p>
-        <div className="mt-5 flex min-w-[36rem] items-stretch gap-0">
-          <Node title="This device" sub="ALGM · localStorage" live />
-          <Rail />
-          <Node title="Edge" sub="CDN / API front door" />
-          <Rail />
-          <div className="grid flex-1 grid-cols-2 gap-2">
-            {agents.map(({ model, env }) => (
-              <div key={model.id} className="rounded-xl bg-raised px-3 py-2">
-                <p className="text-xs font-medium">{model.short}</p>
-                <p className="font-mono text-[0.625rem] text-faint">{env.facility}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-        <p className="mt-4 text-xs text-faint">
-          Geometric, not a map. Every door in the atlas — none of them can be switched off.
-        </p>
+      <section className="rise-2 mb-8 rounded-2xl bg-surface p-4 shadow-[0_0_0_1px_var(--color-line)] sm:p-5">
+        <p className="text-[0.6875rem] tracking-[0.14em] text-muted uppercase">Honesty Local</p>
+        {feed.state === "ok" && (
+          <p className="mt-2 flex items-center gap-2 text-sm">
+            <LivePip />
+            Connected at {HONESTY_LOCAL_URL}
+            {feed.machine ? ` · ${feed.machine}` : ""}
+            {feed.lastScan ? ` · last scan ${timeAgo(Date.parse(feed.lastScan))}` : ""}
+          </p>
+        )}
+        {feed.state === "offline" && (
+          <p className="mt-2 text-sm text-warn">
+            Not connected. Honesty Local is not answering at {HONESTY_LOCAL_URL} ({feed.error}).
+            Start honesty.py on this computer and refresh. Nothing is shown until it does.
+          </p>
+        )}
+        {feed.state === "idle" && <p className="mt-2 text-sm text-muted">Checking…</p>}
       </section>
 
       {drift.length > 0 && (
         <section className="mb-8 rounded-2xl bg-surface p-4 shadow-[0_0_0_1px_var(--color-line)] sm:p-5">
           <h2 className="font-display text-xl">Drift</h2>
           <p className="mt-1 text-sm text-muted">
-            Claimed origin does not match the observed path.
+            The atlas claim and the observed path do not agree.
           </p>
           <ul className="mt-4 grid gap-3">
             {drift.map((s) => {
@@ -57,8 +69,8 @@ function Honesty() {
               return (
                 <li key={s.id} className="rounded-xl bg-raised p-3">
                   <div className="flex items-center justify-between gap-2">
-                    <p className="text-sm font-medium">{model?.short}</p>
-                    <Badge tone="bad">Honesty {s.honesty}</Badge>
+                    <p className="text-sm font-medium">{model?.short ?? s.modelId}</p>
+                    <Badge tone="bad">Drift</Badge>
                   </div>
                   <p className="mt-2 text-xs leading-relaxed text-muted">{s.note}</p>
                   <Path claimed={s.claimedOrigin} hops={s.observedPath} />
@@ -71,9 +83,14 @@ function Honesty() {
 
       <section className="grid gap-4">
         <h2 className="font-display text-xl">Session ledger</h2>
+        {feed.state === "ok" && sessions.length === 0 && (
+          <p className="text-sm text-muted">
+            Honesty Local is connected and reports no model in use or configured right now.
+          </p>
+        )}
         {sessions.map((s) => {
           const model = getModel(s.modelId);
-          const env = getEnv(s.modelId, s.envId);
+          const env = s.envId ? getEnv(s.modelId, s.envId) : undefined;
           return (
             <article
               key={s.id}
@@ -81,19 +98,22 @@ function Honesty() {
             >
               <div className="flex flex-wrap items-center gap-2">
                 <h3 className="text-sm font-medium">
-                  {model?.short} · {env?.label}
+                  {model?.short ?? s.modelId}
+                  {env ? ` · ${env.label}` : " · not in the atlas"}
                 </h3>
                 {s.drift ? (
                   <Badge tone="bad">Drift</Badge>
-                ) : (
+                ) : s.scored ? (
                   <Badge tone="good">Match</Badge>
+                ) : (
+                  <Badge>Unscored</Badge>
                 )}
                 <span className="ml-auto text-[0.6875rem] text-faint tabular-nums">
                   {timeAgo(s.at)}
                 </span>
               </div>
               <Path claimed={s.claimedOrigin} hops={s.observedPath} />
-              <HonestyBar className="mt-3" value={s.honesty} />
+              {s.scored && <HonestyBar className="mt-3" value={s.honesty} />}
               <p className="mt-2 text-xs leading-relaxed text-muted">{s.note}</p>
               {env && (
                 <p className="mt-2 text-[0.6875rem] text-faint">
@@ -111,34 +131,6 @@ function Honesty() {
   );
 }
 
-function Node({
-  title,
-  sub,
-  live,
-}: {
-  title: string;
-  sub: string;
-  live?: boolean;
-}) {
-  return (
-    <div className="w-36 shrink-0 rounded-xl bg-raised px-3 py-3">
-      <p className="flex items-center gap-2 text-xs font-medium">
-        {live && <LivePip />}
-        {title}
-      </p>
-      <p className="mt-1 text-[0.625rem] text-faint">{sub}</p>
-    </div>
-  );
-}
-
-function Rail() {
-  return (
-    <div className="flex w-8 shrink-0 items-center" aria-hidden="true">
-      <div className="h-px w-full bg-line-strong" />
-    </div>
-  );
-}
-
 function Path({ claimed, hops }: { claimed: string; hops: string[] }) {
   return (
     <div className="mt-3">
@@ -146,7 +138,7 @@ function Path({ claimed, hops }: { claimed: string; hops: string[] }) {
         Claimed · {claimed}
       </p>
       <p className="mt-1 font-mono text-[0.6875rem] leading-relaxed text-muted">
-        {hops.join(" → ")}
+        Observed · {hops.join(" → ")}
       </p>
     </div>
   );
