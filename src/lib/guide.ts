@@ -1,43 +1,30 @@
 import { createServerFn } from "@tanstack/react-start";
 
+/**
+ * Explaining a verdict, without calling out to anybody.
+ *
+ * This used to POST the user's query to a vendor AI API from product code,
+ * which the standing order forbids: no outside system assigned from the
+ * product, and no vendor's name on the work.
+ *
+ * The call is gone. The contract is not — the handler already had a branch for
+ * "no key, no guidance" returning `{ ok: false, error }`, and the caller in
+ * verdict-card.tsx already renders it. So the shape every caller expects is
+ * unchanged; only the network hop is removed.
+ *
+ * The verdict itself is produced on-device and is what the card shows. This
+ * was only ever the optional prose on top of it.
+ */
+type Guidance = { ok: true; text: string } | { ok: false; error: string };
+
 export const explainVerdict = createServerFn({ method: "POST" })
   .validator((input: { query: string; headline: string; body: string; teach: string }) => input)
-  .handler(async ({ data }) => {
-    const apiKey = process.env.XAI_API_KEY;
-    if (!apiKey) {
-      return { ok: false as const, error: "Guidance from Grok is unavailable in this environment." };
-    }
-
-    const res = await fetch("https://api.x.ai/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model: "grok-4.5",
-        max_tokens: 420,
-        temperature: 0.3,
-        messages: [
-          {
-            role: "system",
-            content:
-              "You are the educator inside Advanced Level Guidance Management, an on-device AI honesty and capability guide. Be direct. No fluff, no emoji. Explain why a capability is allowed, limited, or blocked in a specific environment, and how to use the user's actual stack instead. Never claim ALGM tunnels or encrypts traffic. Keep it under 180 words.",
-          },
-          {
-            role: "user",
-            content: `User asked: ${data.query}\nVerdict: ${data.headline}\n${data.body}\nTeaching point: ${data.teach}\nExplain like a patient senior engineer.`,
-          },
-        ],
-      }),
-    });
-
-    if (!res.ok) {
-      return { ok: false as const, error: `Grok could not explain this just now (${res.status}).` };
-    }
-
-    const body = (await res.json()) as {
-      choices: { message: { content: string } }[];
+  .handler(async (): Promise<Guidance> => {
+    // The return type stays the union it always was. Narrowing it to the
+    // failure case alone would be honest about today's behaviour and would
+    // break every caller that handles the success branch, for no gain.
+    return {
+      ok: false,
+      error: "Extended guidance is off. The verdict above is produced on this device.",
     };
-    return { ok: true as const, text: body.choices[0]?.message.content ?? "" };
   });
