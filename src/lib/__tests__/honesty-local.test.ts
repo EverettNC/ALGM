@@ -80,13 +80,29 @@ test("a browser session to Anthropic is a web door; a Bedrock host is an enterpr
   assert.equal(s.drift, false);
 });
 
-test("a row the atlas does not know is shown unscored with no drift call and no invented number", () => {
+test("a vendor row names no model, so no model is claimed — but the door still scores", () => {
   const s = sessionFromRow(
     row({ id: "anthropic-live", name: "Anthropic live session", provider: "Anthropic", where: "datacenter", source: "wire", host: "api.anthropic.com", via: "Chrome" }),
     NOW,
   );
+  // The wire probe sees the vendor and the way in, never which model answers.
   assert.equal(atlasModelFor(row({ id: "anthropic-live", name: "Anthropic live session", provider: "Anthropic" })), undefined);
+  // The door is knowable even when the model is not, and the door is what
+  // carries the retention and routing story — so it is scored, and the note
+  // says outright that the model was not identified.
+  assert.equal(s.scored, true);
+  assert.ok(s.honesty > 0);
+  assert.equal(s.drift, false);
+  assert.match(s.note, /not which model is answering/);
+});
+
+test("a vendor the atlas has never heard of stays unscored, with no invented number", () => {
+  const s = sessionFromRow(
+    row({ id: "acme-live", name: "Acme live session", provider: "Acme", where: "datacenter", source: "wire", via: "Chrome" }),
+    NOW,
+  );
   assert.equal(s.scored, false);
+  assert.equal(s.honesty, 0);
   assert.equal(s.drift, false);
   assert.equal(s.claimedOrigin, "Not in the atlas");
   assert.match(s.note, /no entry/);
