@@ -36,26 +36,83 @@ export type HonestyFeed =
 
 const BROWSERS = ["chrome", "safari", "firefox", "brave", "edge", "chromium"];
 
-/** Map a Honesty Local provider + model id onto an atlas model, or nothing. */
+/**
+ * The version an observed model id names, if it names one.
+ *
+ * "claude-sonnet-5" -> "5", "gemini-2.5-pro" -> "2.5", "grok-4.5" -> "4.5".
+ * Nothing, when the id is only a family or a live-session placeholder.
+ */
+function versionIn(id: string, family: string): string | undefined {
+  const m = new RegExp(`${family}[^0-9]{0,3}(\\d+(?:\\.\\d+)?)`).exec(id);
+  return m?.[1];
+}
+
+/**
+ * Map a Honesty Local provider + model id onto an atlas model, or nothing.
+ *
+ * A family match is not a match. This used to answer `id.includes("sonnet")`
+ * with "claude-sonnet-4", so a machine running **Sonnet 5** was told it was
+ * running Sonnet 4 — a model it was not running, presented as a scored claim
+ * with a green Match bar. That is the one thing this page says it never does.
+ *
+ * The version has to agree. When the observed id names a version the atlas
+ * does not carry, the honest answer is no entry: the row is still shown,
+ * unscored, saying the atlas has nothing to compare it against. An atlas that
+ * is behind should look behind, not confident.
+ */
 export function atlasModelFor(row: HonestyRow): string | undefined {
   const provider = (row.provider || "").toLowerCase();
   const id = `${row.id} ${row.name}`.toLowerCase();
+
+  /** Only claim `atlasId` when the observed version matches `expected`. */
+  const exact = (family: string, expected: string, atlasId: string) => {
+    if (!id.includes(family)) return undefined;
+    const seen = versionIn(id, family);
+    // No version in the id at all: a live-session row that names a vendor but
+    // not a model. Nothing to score against.
+    if (!seen) return undefined;
+    return seen === expected ? atlasId : undefined;
+  };
+
   if (provider === "anthropic") {
-    if (id.includes("opus")) return "claude-opus-4";
-    if (id.includes("sonnet")) return "claude-sonnet-4";
-    return undefined;
+    return exact("opus", "4", "claude-opus-4") ?? exact("sonnet", "4", "claude-sonnet-4");
   }
-  if (provider === "openai") return id.match(/\bgpt-5/) ? "gpt-5" : undefined;
-  if (provider === "xai") return id.includes("grok") ? "grok-4.5" : undefined;
-  if (provider === "gemini" || provider === "google") return id.includes("gemini") ? "gemini-2.5" : undefined;
-  if (provider === "mistral") return id.includes("mistral") ? "mistral-large" : undefined;
-  if (provider === "deepseek") return id.includes("deepseek") ? "deepseek-v3" : undefined;
+  if (provider === "openai") return exact("gpt", "5", "gpt-5");
+  if (provider === "xai") return exact("grok", "4.5", "grok-4.5");
+  if (provider === "gemini" || provider === "google") return exact("gemini", "2.5", "gemini-2.5");
+  if (provider === "mistral") return id.includes("mistral-large") ? "mistral-large" : undefined;
+  if (provider === "deepseek") return exact("deepseek", "3", "deepseek-v3") ?? (id.includes("deepseek-v3") ? "deepseek-v3" : undefined);
   if (provider === "ollama" || provider === "lm studio" || provider === "nvidia nim") {
     if (id.includes("llama")) return "llama-70b-local";
     if (id.includes("qwen")) return "qwen-local";
     if (id.includes("deepseek")) return "deepseek-v3";
     return undefined;
   }
+  return undefined;
+}
+
+/**
+ * The atlas model that owns a vendor's doors, when the observation names a
+ * vendor but no model.
+ *
+ * The wire probe can only see that a session is open to OpenAI or xAI — the
+ * host and the browser, never which model is answering. Those rows used to
+ * score nothing at all, which threw away the part ALGM is actually for: the
+ * door is knowable even when the model is not. A ChatGPT web session has the
+ * same retention and routing whichever GPT is behind it.
+ *
+ * So this picks the vendor's entry purely to read its doors. The model is
+ * never claimed off the back of it — `sessionFromRow` scores the environment
+ * and says outright that the model is unnamed.
+ */
+function vendorAtlasModel(provider: string): string | undefined {
+  const p = provider.toLowerCase();
+  if (p === "openai") return "gpt-5";
+  if (p === "xai") return "grok-4.5";
+  if (p === "anthropic") return "claude-opus-4";
+  if (p === "gemini" || p === "google") return "gemini-2.5";
+  if (p === "mistral") return "mistral-large";
+  if (p === "deepseek") return "deepseek-v3";
   return undefined;
 }
 
@@ -102,6 +159,28 @@ export function sessionFromRow(row: HonestyRow, now = Date.now()): HonestySessio
   const path = observedPath(row);
 
   if (!modelId) {
+    // The model is unnamed, but the door may still be known. Score the path.
+    const vendorId = vendorAtlasModel(row.provider);
+    const vendorEnv = vendorId ? pickEnvByKind(vendorId, kind) : undefined;
+    if (vendorId && vendorEnv) {
+      const vendorModel = getModel(vendorId)!;
+      return {
+        id: `hl-${row.provider}-${row.id}`.toLowerCase().replace(/[^a-z0-9-]+/g, "-"),
+        modelId: vendorId,
+        envId: vendorEnv.id,
+        claimedOrigin: vendorEnv.facility,
+        observedPath: path,
+        honesty: vendorEnv.data.honesty,
+        scored: true,
+        note:
+          `Honesty Local saw a ${vendorModel.provider} session and the door it came through — ` +
+          `${vendorEnv.label} — but not which model is answering, so the model is not claimed. ` +
+          `The score is for the door: ${vendorEnv.data.honestyWhy}`,
+        at,
+        drift: false,
+      };
+    }
+
     return {
       id: `hl-${row.provider}-${row.id}`.toLowerCase().replace(/[^a-z0-9-]+/g, "-"),
       modelId: row.id,
