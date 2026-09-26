@@ -1,4 +1,4 @@
-# ALGM — Advanced Level Guidance Management
+# ALGM — Advanced Learning Guidance Management
 
 **Know the door before you walk through it.**
 
